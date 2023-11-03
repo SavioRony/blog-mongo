@@ -5,6 +5,7 @@ import br.com.fiap.blogmongo.service.ArtigoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -27,5 +28,15 @@ public class ArtigoController {
     @PostMapping
     public Artigo criar(@RequestBody Artigo artigo){
         return artigoService.criar(artigo);
+    }
+
+    @GetMapping("/maior-data")
+    public List<Artigo> findByGreaterThan(@RequestParam("data")LocalDateTime data){
+        return artigoService.findByDataGreaterThan(data);
+    }
+
+    @GetMapping("/data-status")
+    public List<Artigo> findByDataAndStatus(@RequestParam("data") LocalDateTime data, @RequestParam(value = "status", defaultValue = "1") Integer status){
+        return artigoService.findByDataAndStatus(data, status);
     }
 }
