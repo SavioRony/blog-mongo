@@ -9,6 +9,7 @@ import br.com.fiap.blogmongo.repository.AutorRepository;
 import br.com.fiap.blogmongo.service.ArtigoService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -79,9 +81,15 @@ public class ArtigoServiceImpl implements ArtigoService {
                         new IllegalArgumentException("Autor Inexistente!"));
                 artigo.setAutor(autor);
             }
-            mongoTemplate.save(artigo);
+            try{
+                mongoTemplate.save(artigo);
+            }catch (OptimisticLockingFailureException e){
+                Artigo atualizado = repository.findById(artigo.getCodigo()).get();
+                artigo.setVersion(atualizado.getVersion());
+                mongoTemplate.save(artigo);
+            }
         }else{
-            throw new IllegalArgumentException("Artigo não existe!");
+            throw new IllegalArgumentException("Artigo Inexistente!");
         }
     }
 
