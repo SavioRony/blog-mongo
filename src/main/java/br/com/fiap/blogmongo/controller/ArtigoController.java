@@ -1,7 +1,9 @@
 package br.com.fiap.blogmongo.controller;
 
 import br.com.fiap.blogmongo.model.Artigo;
+import br.com.fiap.blogmongo.model.dto.ArtigoStatusCount;
 import br.com.fiap.blogmongo.model.dto.ArtigoUrlDto;
+import br.com.fiap.blogmongo.model.dto.AutorTotalArtigo;
 import br.com.fiap.blogmongo.service.ArtigoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -102,6 +104,16 @@ public class ArtigoController {
     @GetMapping("/buscar-texto")
     public List<Artigo> buscarPorTexto(@RequestParam("searchTerm") String termo){
         return artigoService.findByTexto(termo);
+    }
+
+    @GetMapping("/contar-status")
+    public List<ArtigoStatusCount> contaArtigosPorStatus(){
+        return artigoService.contarArtigoPorStatus();
+    }
+
+    @GetMapping("/artigo-autor")
+    public List<AutorTotalArtigo> calcularTotalArtigosPorAutorNoPeriodo(@RequestParam("inicio") LocalDateTime inicio, @RequestParam("fim") LocalDateTime fim){
+        return artigoService.calcularTotalArtigosPorAutorNoPeriodo(inicio, fim);
     }
 
 

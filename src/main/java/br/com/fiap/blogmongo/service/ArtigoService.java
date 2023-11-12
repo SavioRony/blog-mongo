@@ -1,6 +1,9 @@
 package br.com.fiap.blogmongo.service;
 
 import br.com.fiap.blogmongo.model.Artigo;
+import br.com.fiap.blogmongo.model.dto.ArtigoStatusCount;
+import br.com.fiap.blogmongo.model.dto.AutorTotalArtigo;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -35,5 +38,8 @@ public interface ArtigoService {
 
     List<Artigo> findByTexto(String searchTerm);
 
+    List<ArtigoStatusCount> contarArtigoPorStatus();
+
+    List<AutorTotalArtigo> calcularTotalArtigosPorAutorNoPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim);
 
 }

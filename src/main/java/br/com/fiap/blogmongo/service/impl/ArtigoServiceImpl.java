@@ -2,6 +2,8 @@ package br.com.fiap.blogmongo.service.impl;
 
 import br.com.fiap.blogmongo.model.Artigo;
 import br.com.fiap.blogmongo.model.Autor;
+import br.com.fiap.blogmongo.model.dto.ArtigoStatusCount;
+import br.com.fiap.blogmongo.model.dto.AutorTotalArtigo;
 import br.com.fiap.blogmongo.repository.ArtigoRepository;
 import br.com.fiap.blogmongo.repository.AutorRepository;
 import br.com.fiap.blogmongo.service.ArtigoService;
@@ -12,8 +14,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,11 +40,13 @@ public class ArtigoServiceImpl implements ArtigoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Artigo obterPorCodigo(String codigo) {
         return repository.findById(codigo).orElseThrow(() -> new IllegalArgumentException("Artigo não encontrado!"));
     }
 
     @Override
+    @Transactional
     public Artigo criar(Artigo artigo) {
         if(artigo.getAutor() != null && artigo.getAutor().getCodigo() != null){
             Autor autor = autorRepository.findById(artigo.getAutor().getCodigo()).orElseThrow(() ->
@@ -63,6 +71,7 @@ public class ArtigoServiceImpl implements ArtigoService {
     }
 
     @Override
+    @Transactional
     public void atualizar(Artigo artigo) {
         if(repository.existsById(artigo.getCodigo())){
             if(artigo.getAutor() != null && artigo.getAutor().getCodigo() != null){
@@ -77,6 +86,7 @@ public class ArtigoServiceImpl implements ArtigoService {
     }
 
     @Override
+    @Transactional
     public void atualizarArtigo(String id, String novaURL) {
         Query query = new Query(Criteria.where("_id").is(id));
         Update update = new Update().set("url", novaURL);
@@ -84,12 +94,14 @@ public class ArtigoServiceImpl implements ArtigoService {
     }
 
     @Override
+    @Transactional
     public void deleteById(String id) {
         this.repository.deleteById(id);
 
     }
 
     @Override
+    @Transactional
     public void deleteArtigoById(String id) {
         Query query = new Query(Criteria.where("_id").is(id));
         mongoTemplate.remove(query, Artigo.class);
@@ -143,5 +155,28 @@ public class ArtigoServiceImpl implements ArtigoService {
         TextCriteria criteria = TextCriteria.forDefaultLanguage().matchingPhrase(searchTerm);
         Query query = TextQuery.queryText(criteria).sortByScore();
         return mongoTemplate.find(query, Artigo.class);
+    }
+
+    @Override
+    public List<ArtigoStatusCount> contarArtigoPorStatus() {
+        TypedAggregation<Artigo> aggregation = Aggregation.newAggregation(Artigo.class,
+                Aggregation.group("status").count().as("quantidade"),
+                Aggregation.project("quantidade").and("status").previousOperation());
+        AggregationResults<ArtigoStatusCount> results = mongoTemplate.aggregate(aggregation, ArtigoStatusCount.class);
+        return results.getMappedResults();
+    }
+
+    @Override
+    public List<AutorTotalArtigo> calcularTotalArtigosPorAutorNoPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+        TypedAggregation<Artigo> aggregation = Aggregation.newAggregation(
+                Artigo.class,
+                Aggregation.match(Criteria.where("data")
+                        .gte(dataInicio.toLocalDate().atStartOfDay())
+                        .lt(dataFim.plusDays(1).toLocalDate().atStartOfDay())),
+                Aggregation.group("autor").count().as("totalArtigos"),
+                Aggregation.project("totalArtigos").and("autor").previousOperation()
+        );
+        AggregationResults<AutorTotalArtigo> results = mongoTemplate.aggregate(aggregation, AutorTotalArtigo.class);
+        return results.getMappedResults();
     }
 }
