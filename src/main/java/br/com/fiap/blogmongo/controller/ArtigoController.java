@@ -5,11 +5,10 @@ import br.com.fiap.blogmongo.model.dto.ArtigoStatusCount;
 import br.com.fiap.blogmongo.model.dto.ArtigoUrlDto;
 import br.com.fiap.blogmongo.model.dto.AutorTotalArtigo;
 import br.com.fiap.blogmongo.service.ArtigoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +33,7 @@ public class ArtigoController {
     }
 
     @PostMapping
-    public Artigo criar(@RequestBody Artigo artigo){
+    public Artigo criar(@RequestBody @Valid Artigo artigo){
         return artigoService.criar(artigo);
     }
 
@@ -49,7 +48,7 @@ public class ArtigoController {
     }
 
     @PutMapping
-    public void atualizar(@RequestBody Artigo artigo){
+    public void atualizar(@RequestBody @Valid Artigo artigo){
         artigoService.atualizar(artigo);
     }
 
