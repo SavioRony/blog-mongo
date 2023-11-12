@@ -1,5 +1,6 @@
 package br.com.fiap.blogmongo.service.impl;
 
+import br.com.fiap.blogmongo.exception.NotFoundException;
 import br.com.fiap.blogmongo.model.Artigo;
 import br.com.fiap.blogmongo.model.Autor;
 import br.com.fiap.blogmongo.model.dto.ArtigoStatusCount;
@@ -7,9 +8,11 @@ import br.com.fiap.blogmongo.model.dto.AutorTotalArtigo;
 import br.com.fiap.blogmongo.repository.ArtigoRepository;
 import br.com.fiap.blogmongo.repository.AutorRepository;
 import br.com.fiap.blogmongo.service.ArtigoService;
+import com.mongodb.DuplicateKeyException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -78,18 +81,34 @@ public class ArtigoServiceImpl implements ArtigoService {
         if(repository.existsById(artigo.getCodigo())){
             if(artigo.getAutor() != null && artigo.getAutor().getCodigo() != null){
                 Autor autor = autorRepository.findById(artigo.getAutor().getCodigo()).orElseThrow(() ->
-                        new IllegalArgumentException("Autor Inexistente!"));
+                        new NotFoundException("Autor Inexistente!"));
                 artigo.setAutor(autor);
             }
             try{
-                mongoTemplate.save(artigo);
+                Query query = new Query(Criteria.where("_id").is(artigo.getCodigo()));
+                Update update = new Update()
+                        .set("url", artigo.getUrl())
+                        .set("titulo", artigo.getTitulo())
+                        .set("data", artigo.getData())
+                        .set("texto", artigo.getTexto())
+                        .set("status", artigo.getStatus())
+                        .set("autor", artigo.getAutor());
+                this.mongoTemplate.updateFirst(query, update, Artigo.class);
             }catch (OptimisticLockingFailureException e){
                 Artigo atualizado = repository.findById(artigo.getCodigo()).get();
-                artigo.setVersion(atualizado.getVersion());
-                mongoTemplate.save(artigo);
+                Query query = new Query(Criteria.where("_id").is(artigo.getCodigo()));
+                Update update = new Update()
+                        .set("url", artigo.getUrl())
+                        .set("titulo", artigo.getTitulo())
+                        .set("data", artigo.getData())
+                        .set("texto", artigo.getTexto())
+                        .set("status", artigo.getStatus())
+                        .set("autor", artigo.getAutor())
+                        .set("version", atualizado.getVersion());
+                this.mongoTemplate.updateFirst(query, update, Artigo.class);
             }
         }else{
-            throw new IllegalArgumentException("Artigo Inexistente!");
+            throw new NotFoundException("Artigo Inexistente!");
         }
     }
 

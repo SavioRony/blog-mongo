@@ -23,12 +23,6 @@ public class ArtigoController {
     @Autowired
     private ArtigoService artigoService;
 
-    @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<String> handleOptimisticLockingFailureException(OptimisticLockingFailureException ex){
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Erro de concorrência: O Artigo foi atualizado por outro usuario." +
-                "Por favor, tente novamente.");
-    }
-
     @GetMapping
     public List<Artigo> obterTodos(){
         return artigoService.obterTodos();
